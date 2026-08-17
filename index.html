@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Clash Clan Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B1220;
+    --surface: #151F35;
+    --surface-2: #1C2A45;
+    --border: #263454;
+    --gold: #E8B44A;
+    --gold-dim: #6B5527;
+    --blue: #4F7CFF;
+    --success: #3ECF8E;
+    --warning: #F2A93B;
+    --danger: #F0563D;
+    --text: #F1F4FA;
+    --text-muted: #8C97B3;
+    --text-faint: #5A6584;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    padding: 32px 24px 80px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+
+  h1, h2, h3, .display {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  h1 { font-size: 28px; }
+  h2 { font-size: 18px; color: var(--text-muted); font-weight: 600; }
+  h3 { font-size: 15px; color: var(--gold); font-weight: 600; margin: 16px 0 10px 0; }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px 6px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--text-faint);
+    flex-shrink: 0;
+  }
+  .dot.live { background: var(--success); box-shadow: 0 0 0 3px rgba(62,207,142,0.18); animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 20px 24px;
+    margin-bottom: 20px;
+  }
+
+  .config-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr auto;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  input, select {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    width: 100%;
+  }
+  button {
+    background: var(--gold);
+    color: #241C08;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  button:hover { filter: brightness(1.08); }
+  button.ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .hint { font-size: 12px; color: var(--text-faint); margin-top: 8px; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .toolbar-actions { display: flex; gap: 8px; }
+  .toolbar-actions button { padding: 8px 14px; font-size: 12px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0 10px 10px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { color: var(--text); }
+  thead th.day-col { text-align: center; }
+  thead th.num-col { 
+    text-align: center; 
+    width: 40px;
+    cursor: default;
+  }
+  thead th.num-col:hover { color: var(--text-faint); }
+  
+  tbody td {
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody td.num-col {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-faint);
+    width: 40px;
+  }
+  
+  .member-name { font-weight: 500; font-size: 14px; }
+  .member-total { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-faint); }
+
+  .shield-cell { text-align: center; }
+  .shield { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
+  .shield svg { display: block; }
+  .shield-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-faint); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-faint);
+    font-size: 13px;
+  }
+
+  .promo-section {
+    margin-bottom: 20px;
+  }
+  .promo-section:last-child { margin-bottom: 0; }
+  .promo-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .promo-section h3 .badge-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: var(--surface-2);
+    padding: 2px 10px;
+    border-radius: 999px;
+    color: var(--text-muted);
+  }
+  .promo-table-wrap {
+    overflow-x: auto;
+  }
+  .promo-table-wrap table {
+    font-size: 13px;
+  }
+  .promo-table-wrap table th {
+    font-size: 10px;
+    padding: 6px 10px;
+  }
+  .promo-table-wrap table td {
+    padding: 6px 10px;
+  }
+  .promo-table-wrap table td:first-child {
+    font-weight: 500;
+  }
+  .promo-table-wrap table td.num-col {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-faint);
+    width: 35px;
+  }
+  .promo-badge-cell {
+    text-align: center;
+  }
+  .badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    display: inline-block;
+  }
+  .badge.eligible { background: rgba(232,180,74,0.16); color: var(--gold); border: 1px solid var(--gold-dim); }
+  .badge.promote-elder { background: rgba(62,207,142,0.16); color: var(--success); border: 1px solid rgba(62,207,142,0.3); }
+  .badge.promote-coleader { background: rgba(79,124,255,0.16); color: var(--blue); border: 1px solid rgba(79,124,255,0.3); }
+
+  .track-label { font-size: 11px; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .track { height: 6px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+  .track-fill { height: 100%; border-radius: 999px; background: var(--text-faint); }
+  .track-fill.ok { background: var(--gold); }
+
+  .ref-note { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-faint); margin-top: 14px; }
+
+  .sort-indicator {
+    font-size: 10px;
+    margin-left: 4px;
+  }
+  .promo-rank {
+    font-size: 10px;
+    color: var(--text-faint);
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="eyebrow" id="clanLabel">Nenhum clã conectado</div>
+      <h1>Clash Clan Tracker</h1>
+    </div>
+    <div class="status-pill">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">Sem conexão</span>
+    </div>
+  </header>
+
+  <div class="panel">
+    <h2>Conexão</h2>
+    <div class="config-grid">
+      <input id="apiUrl" readonly style="opacity: 0.6; cursor: not-allowed;" value="https://clash-tracker-six.vercel.app" />
+      <select id="clanSelect"><option value="">Selecione um clã</option></select>
+      <button onclick="connect()">Conectar</button>
+    </div>
+    <p class="hint">A URL da API já está fixa. Basta selecionar um clã e conectar.</p>
+  </div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <h2 style="margin:0">Ataques por dia de guerra</h2>
+      <div class="toolbar-actions">
+        <button class="ghost" id="historyBtn" style="display:none">Ver últimos 20 dias</button>
+      </div>
+    </div>
+    <div id="attackTableWrap"></div>
+  </div>
+
+  <div class="panel">
+    <h2 style="margin-bottom:14px">Promoções</h2>
+    
+    <div id="promoElderSection" class="promo-section"></div>
+    <div id="promoCoLeaderSection" class="promo-section"></div>
+    
+    <div style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 20px;">
+      <h3 style="color: var(--text-muted); font-size: 13px;">📊 Todas as médias por membro</h3>
+      <div id="promoFullTableWrap"></div>
+    </div>
+    
+    <div class="ref-note" id="promoRef"></div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// CLASH CLAN TRACKER - FRONTEND COMPLETO (COM ORDENAÇÃO)
+// ============================================================
+
+const API_BASE_URL = 'https://clash-tracker-six.vercel.app';
+
+const state = {
+  apiUrl: API_BASE_URL,
+  clanTag: '',
+  warDays: [],
+  promotions: [],
+  sortMode: 'missing',
+  sortAsc: false,
+  activeMembers: new Set(),
+  promoSortMode: 'avg4w',
+  promoSortAsc: false,
+};
+
+function shieldSVG(used, total, size) {
+  size = size || 34;
+  const pct = total > 0 ? used / total : 0;
+  let color = 'var(--danger)';
+  if (pct >= 1) color = 'var(--gold)';
+  else if (pct > 0) color = 'var(--warning)';
+  const fillHeight = 22 * pct;
+  const clipY = 24 - fillHeight;
+  const clipId = `clip-${used}-${total}-${Math.random().toString(36).slice(2)}`;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24">
+    <defs><clipPath id="${clipId}"><rect x="0" y="${clipY}" width="24" height="${Math.max(fillHeight, 0.1)}" /></clipPath></defs>
+    <path d="M12 2 L21 5 V11 C21 16.5 17 20.5 12 22 C7 20.5 3 16.5 3 11 V5 Z" fill="none" stroke="${pct===0?'var(--danger)':'var(--border)'}" stroke-width="1.5"/>
+    <path d="M12 2 L21 5 V11 C21 16.5 17 20.5 12 22 C7 20.5 3 16.5 3 11 V5 Z" fill="${color}" opacity="${pct===0?0:0.85}" transform="scale(${Math.max(pct,0.001)})" transform-origin="12 22"/>
+  </svg>`;
+}
+
+function setStatus(connected, text) {
+  document.getElementById('statusDot').className = connected ? 'dot live' : 'dot';
+  document.getElementById('statusText').textContent = text;
+}
+
+async function connect() {
+  state.apiUrl = API_BASE_URL;
+  
+  setStatus(false, 'Conectando…');
+  try {
+    const res = await fetch(API_BASE_URL + '/api/clans');
+    const clans = await res.json();
+    const sel = document.getElementById('clanSelect');
+    sel.innerHTML = '<option value="">Selecione um clã</option>' +
+      clans.map(c => `<option value="${c.tag}">${c.name || c.tag}</option>`).join('');
+    sel.onchange = () => loadClanData(sel.value);
+    setStatus(clans.length > 0, clans.length > 0 ? clans.length + ' clã(s) encontrado(s)' : 'Nenhum clã cadastrado ainda');
+    if (clans.length > 0) {
+      sel.value = clans[0].tag;
+      loadClanData(clans[0].tag);
+    }
+  } catch (err) {
+    setStatus(false, 'Não foi possível conectar: ' + err.message);
+  }
+}
+
+async function loadClanData(tag) {
+  if (!tag) return;
+  state.clanTag = tag;
+  document.getElementById('clanLabel').textContent = tag;
+  setStatus(true, 'Carregando dados…');
+  try {
+    // Timeout de 25 segundos (o banco Turso pode demorar um pouco para responder)
+    const controller1 = new AbortController();
+    const controller2 = new AbortController();
+    const timeout1 = setTimeout(() => controller1.abort(), 25000);
+    const timeout2 = setTimeout(() => controller2.abort(), 25000);
+
+    const [wd, pr] = await Promise.all([
+      fetch(state.apiUrl + '/api/war-days/' + encodeURIComponent(tag), { signal: controller1.signal }).then(r => r.json()),
+      fetch(state.apiUrl + '/api/promotions/' + encodeURIComponent(tag), { signal: controller2.signal }).then(r => r.json()),
+    ]);
+
+    clearTimeout(timeout1);
+    clearTimeout(timeout2);
+
+    state.warDays = wd;
+    state.promotions = pr;
+    
+    // Membros ativos da última guerra (por tag; fallback por nome caso a tag venha vazia)
+    state.activeMembers = new Set();
+    state.activeMembersByName = new Set();
+    if (wd.length > 0) {
+      const lastPeriod = Math.max(...wd.map(d => d.period_index));
+      const lastWarMembers = wd.filter(d => d.period_index === lastPeriod);
+      lastWarMembers.forEach(d => {
+        if (d.member_tag) state.activeMembers.add(d.member_tag);
+        state.activeMembersByName.add((d.member_name || '').trim().toLowerCase());
+      });
+    }
+
+    function isActiveMember(p) {
+      if (p.member_tag && state.activeMembers.has(p.member_tag)) return true;
+      return state.activeMembersByName.has((p.member_name || '').trim().toLowerCase());
+    }
+    state.isActiveMember = isActiveMember;
+    
+    setStatus(true, 'Conectado · ' + tag);
+    render();
+  } catch (err) {
+    console.warn("Erro ao carregar dados (ou timeout):", err.message);
+    setStatus(true, 'Conectado (Aguardando dados...)');
+    renderEmpty();
+  }
+}
+
+function renderEmpty() {
+  const wrap = document.getElementById('attackTableWrap');
+  wrap.innerHTML = '<div class="empty-state">⏳ Aguardando o banco de dados coletar os primeiros ataques...</div>';
+  document.getElementById('promoElderSection').innerHTML = '';
+  document.getElementById('promoCoLeaderSection').innerHTML = '';
+  document.getElementById('promoFullTableWrap').innerHTML = '<div class="empty-state">⏳ Aguardando os dados de promoções...</div>';
+  document.getElementById('promoRef').textContent = '';
+}
+
+function toggleSort(columnIndex) {
+  const key = columnIndex === -1 ? 'name' : `day-${columnIndex}`;
+  if (state.sortMode === key) {
+    state.sortAsc = !state.sortAsc;
+  } else {
+    state.sortMode = key;
+    state.sortAsc = false;
+  }
+  render();
+}
+
+// OBS: a tabela agora é sempre fixa com as últimas 20 guerras coletadas.
+// O botão de histórico foi mantido apenas para não quebrar o layout (fica oculto).
+
+function togglePromoSort(column) {
+  if (state.promoSortMode === column) {
+    state.promoSortAsc = !state.promoSortAsc;
+  } else {
+    state.promoSortMode = column;
+    state.promoSortAsc = false;
+  }
+  renderPromotions();
+}
+
+// ============================================================
+// TABELA FIXA DE 20 GUERRAS
+// slot 0 = guerra mais recente, slot 19 = mais antiga
+// ============================================================
+const MAX_WAR_SLOTS = 20;
+
+function buildWarSlots() {
+  // Coleta as guerras conhecidas (section+period únicos), ordenadas por data de coleta mais recente
+  const warsMap = new Map();
+  state.warDays.forEach(row => {
+    const period = row.period_index;
+    const updated = row.updated_at || '';
+    if (!warsMap.has(period) || updated > warsMap.get(period)) {
+      warsMap.set(period, updated);
+    }
+  });
+  // Ordena do mais recente para o mais antigo (data de atualização)
+  const sortedWars = Array.from(warsMap.entries()).sort((a, b) => (b[1] > a[1] ? 1 : -1)).map(e => e[0]);
+  // Pega as 20 mais recentes (as 20 mais recentes ficam nos slots 0..19)
+  const last20 = sortedWars.slice(0, MAX_WAR_SLOTS);
+  // slots[0] = mais recente, slots[19] = mais antiga
+  const slots = last20.map((period, idx) => ({ slot: idx + 1, period }));
+  return slots;
+}
+
+// Determina a partir de qual slot o membro JÁ estava no clã.
+// Regra: o membro entrou no clã na primeira guerra (mais antiga) em que ele tem registro,
+// ou na guerra mais antiga existente se ele nunca participou.
+function computePresence(membersMap, slots) {
+  const presence = new Map();
+  membersMap.forEach((m, key) => {
+    let firstSlot = null; // primeiro slot (mais antigo) em que o membro apareceu
+    for (const s of slots) {
+      const r = m.byPeriod[s.period];
+      if (r) {
+        const slotIdx = MAX_WAR_SLOTS - 1 - (slots.length - s.slot); // índice 0-based descendo
+        if (firstSlot === null || s.slot > firstSlot) firstSlot = s.slot;
+      }
+    }
+    // Se o membro nunca participou de nenhuma das 20 guerras, consideramos que entrou
+    // apenas depois da guerra mais antiga conhecida: aparece a partir do slot 1 (mais recente)
+    presence.set(key, firstSlot);
+  });
+  return presence;
+}
+
+function renderAttackTable() {
+  const wrap = document.getElementById('attackTableWrap');
+  if (!state.warDays.length) {
+    wrap.innerHTML = '<div class="empty-state">Nenhum dado de ataque ainda. Aguarde o próximo dia de guerra.</div>';
+    return;
+  }
+
+  const slots = buildWarSlots(); // slots fixos 1..20, slot 1 = mais recente
+
+  // Agrupa por member_tag quando disponível; fallback por nome normalizado
+  function memberKey(row) {
+    return (row.member_tag && String(row.member_tag).trim() !== '')
+      ? 't:' + row.member_tag
+      : 'n:' + (row.member_name || '').trim().toLowerCase();
+  }
+
+  const membersMap = new Map();
+  state.warDays.forEach(row => {
+    if (!state.isActiveMember(row)) return;
+    const key = memberKey(row);
+    if (!membersMap.has(key)) {
+      membersMap.set(key, { 
+        name: row.member_name, 
+        byPeriod: {},
+        rank: row.member_rank || 'member'
+      });
+    }
+    const m = membersMap.get(key);
+    // Mantém o registro com a informação mais recente
+    const existing = m.byPeriod[row.period_index];
+    if (!existing || (row.updated_at || '') > (existing.updated_at || '')) {
+      m.byPeriod[row.period_index] = row;
+    }
+    if ((row.updated_at || '') > (m.lastUpdate || '')) {
+      m.name = row.member_name;
+      m.rank = row.member_rank || 'member';
+      m.lastUpdate = row.updated_at;
+    }
+  });
+
+  const presence = computePresence(membersMap, slots);
+
+  // Monta os valores por slot: 1..20 (1 = mais recente) para cada membro
+  let members = Array.from(membersMap.entries()).map(([key, m]) => {
+    const firstSlot = presence.get(key);
+    const values = [];
+    let total = 0;
+    let gamesCount = 0;
+    for (const s of slots) {
+      const r = m.byPeriod[s.period];
+      if (r) {
+        values.push(r.decks_used);
+        total += r.decks_used || 0;
+        gamesCount++;
+      } else {
+        // Se ainda não estava no clã → 'X'; se já estava e não participou → 0
+        values.push(null);
+      }
+    }
+    return { 
+      key,
+      name: m.name, 
+      rank: m.rank,
+      firstSlot,
+      values,        // valores na ordem dos slots (1 = mais recente)
+      total, 
+      gamesCount,
+      maxTotal: MAX_WAR_SLOTS * 4
+    };
+  });
+
+  const sortMode = state.sortMode;
+  const sortAsc = state.sortAsc;
+  
+  members.sort((a, b) => {
+    let cmp = 0;
+    if (sortMode === 'name') {
+      cmp = a.name.localeCompare(b.name);
+    } else if (sortMode.startsWith('day-')) {
+      const dayIdx = parseInt(sortMode.split('-')[1]); // 0-based dentro de values
+      const aVal = a.values[dayIdx] !== null ? a.values[dayIdx] : -1;
+      const bVal = b.values[dayIdx] !== null ? b.values[dayIdx] : -1;
+      cmp = aVal - bVal;
+    } else if (sortMode === 'missing') {
+      cmp = (a.maxTotal - a.total) - (b.maxTotal - b.total);
+    } else {
+      cmp = a.total - b.total;
+    }
+    return sortAsc ? cmp : -cmp;
+  });
+
+  const getSortIndicator = (columnKey) => {
+    if (state.sortMode === columnKey) {
+      return `<span class="sort-indicator">${state.sortAsc ? '▲' : '▼'}</span>`;
+    }
+    return '';
+  };
+
+  // Cabeçalho fixo: números de 1 a 20 (1 = guerra mais recente)
+  const headerCells = slots.map((s, idx) => 
+    `<th class="day-col" onclick="toggleSort(${idx})">${s.slot}${getSortIndicator(`day-${idx}`)}</th>`
+  ).join('');
+
+  const header = `<tr>
+    <th class="num-col">#</th>
+    <th onclick="toggleSort(-1)">
+      Membro ${getSortIndicator('name')}
+    </th>
+    <th class="day-col" onclick="toggleSort('total')" style="width:60px">Total<br><span style="opacity:.6">${MAX_WAR_SLOTS}G</span>${getSortIndicator('total')}</th>
+    ${headerCells}
+  </tr>`;
+
+  const rows = members.map((m, index) => `
+    <tr>
+      <td class="num-col">${index + 1}</td>
+      <td>
+        <div class="member-name">${m.name}</div>
+        <div class="member-total">${m.total}/${MAX_WAR_SLOTS * 4} em ${m.gamesCount} guerra${m.gamesCount !== 1 ? 's' : ''}</div>
+      </td>
+      <td class="shield-cell" style="font-family:'JetBrains Mono',monospace;font-size:12px">${m.total}</td>
+      ${m.values.map(v => {
+        if (v === null) return '<td class="shield-cell"><span style="color:#ff4444;font-size:16px;font-weight:800">✕</span></td>';
+        return `<td class="shield-cell"><span class="shield">${shieldSVG(v, 4)}<span class="shield-label">${v}/4</span></span></td>`;
+      }).join('')}
+    </tr>
+  `).join('');
+
+  wrap.innerHTML = `<table style="display:block;overflow-x:auto"><div style="min-width:1100px"><table style="width:100%"><thead>${header}</thead><tbody>${rows}</tbody></table></div></table>`;
+}
+
+function renderPromotions() {
+  const elderSection = document.getElementById('promoElderSection');
+  const coLeaderSection = document.getElementById('promoCoLeaderSection');
+  const fullTableWrap = document.getElementById('promoFullTableWrap');
+  const ref = document.getElementById('promoRef');
+
+  if (!state.promotions.length) {
+    elderSection.innerHTML = '';
+    coLeaderSection.innerHTML = '';
+    fullTableWrap.innerHTML = '<div class="empty-state">Nenhum cálculo de promoção ainda. Ele roda toda segunda de manhã, após o fechamento da guerra.</div>';
+    ref.textContent = '';
+    return;
+  }
+
+  // CORREÇÃO DO LIMITE OCULTO
+  const uniqueDates = [...new Set(state.promotions.map(p => p.calculated_at))].sort().reverse();
+  const latestRun = uniqueDates[0];
+
+  let latest = state.promotions.filter(p => p.calculated_at === latestRun);
+  // Mostra os membros que participaram da última guerra (fallback por nome se a tag estiver vazia)
+  latest = latest.filter(p => state.isActiveMember(p));
+  
+  // Deduplica: se houver várias linhas para o mesmo membro, mantém a última
+  const dedup = new Map();
+  latest.forEach(p => dedup.set((p.member_name || '').trim().toLowerCase(), p));
+  latest = Array.from(dedup.values());
+  
+  const refSection = latest[0]?.reference_section_index;
+
+  if (latest.length === 0) {
+    elderSection.innerHTML = '';
+    coLeaderSection.innerHTML = '';
+    fullTableWrap.innerHTML = '<div class="empty-state">Nenhum membro ativo encontrado na última guerra. Aguarde o próximo dia de guerra.</div>';
+    ref.textContent = '';
+    return;
+  }
+
+  const promoteToElder = [];
+  const promoteToCoLeader = [];
+  const allMembers = [];
+
+  latest.forEach(p => {
+    const rank = (p.member_rank || 'member').toLowerCase();
+    const avg4w = p.avg_4w || 0;
+    const avg8w = p.avg_8w || 0;
+    
+    allMembers.push({ ...p, rank, avg4w, avg8w });
+    
+    if (rank === 'member' && avg4w >= 2500) {
+      promoteToElder.push({ ...p, avg4w, avg8w });
+    }
+    if (rank === 'elder' && avg8w >= 2500) {
+      promoteToCoLeader.push({ ...p, avg4w, avg8w });
+    }
+  });
+
+  if (promoteToElder.length > 0) {
+    elderSection.innerHTML = `
+      <h3>
+        ⭐ Promover a Ancião
+        <span class="badge-count">${promoteToElder.length} membro${promoteToElder.length > 1 ? 's' : ''}</span>
+      </h3>
+      <div class="promo-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="num-col">#</th>
+              <th>Membro</th>
+              <th>Cargo atual</th>
+              <th style="text-align:center;">Média 4 semanas</th>
+              <th style="text-align:center;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${promoteToElder.map((p, index) => `
+              <tr>
+                <td class="num-col">${index + 1}</td>
+                <td>${p.member_name}</td>
+                <td><span class="promo-rank">${p.member_rank || 'membro'}</span></td>
+                <td style="text-align:center; font-family:'JetBrains Mono',monospace;">${Math.round(p.avg4w)}</td>
+                <td class="promo-badge-cell"><span class="badge promote-elder">✅ Promover a Ancião</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } else {
+    elderSection.innerHTML = `
+      <h3>⭐ Promover a Ancião</h3>
+      <div class="empty-state" style="padding:12px; font-size:12px;">Nenhum membro elegível para promoção a Ancião no momento.</div>
+    `;
+  }
+
+  if (promoteToCoLeader.length > 0) {
+    coLeaderSection.innerHTML = `
+      <h3>
+        👑 Promover a Colíder
+        <span class="badge-count">${promoteToCoLeader.length} membro${promoteToCoLeader.length > 1 ? 's' : ''}</span>
+      </h3>
+      <div class="promo-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="num-col">#</th>
+              <th>Membro</th>
+              <th>Cargo atual</th>
+              <th style="text-align:center;">Média 8 semanas</th>
+              <th style="text-align:center;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${promoteToCoLeader.map((p, index) => `
+              <tr>
+                <td class="num-col">${index + 1}</td>
+                <td>${p.member_name}</td>
+                <td><span class="promo-rank">${p.member_rank || 'membro'}</span></td>
+                <td style="text-align:center; font-family:'JetBrains Mono',monospace;">${Math.round(p.avg8w)}</td>
+                <td class="promo-badge-cell"><span class="badge promote-coleader">✅ Promover a Colíder</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } else {
+    coLeaderSection.innerHTML = `
+      <h3>👑 Promover a Colíder</h3>
+      <div class="empty-state" style="padding:12px; font-size:12px;">Nenhum membro elegível para promoção a Colíder no momento.</div>
+    `;
+  }
+
+  const promoSortMode = state.promoSortMode;
+  const promoSortAsc = state.promoSortAsc;
+  
+  allMembers.sort((a, b) => {
+    let cmp = 0;
+    if (promoSortMode === 'name') {
+      cmp = a.member_name.localeCompare(b.member_name);
+    } else if (promoSortMode === 'avg4w') {
+      cmp = a.avg4w - b.avg4w;
+    } else if (promoSortMode === 'avg8w') {
+      cmp = a.avg8w - b.avg8w;
+    }
+    return promoSortAsc ? cmp : -cmp;
+  });
+
+  const getPromoSortIndicator = (column) => {
+    if (state.promoSortMode === column) {
+      return `<span class="sort-indicator">${state.promoSortAsc ? '▲' : '▼'}</span>`;
+    }
+    return '';
+  };
+
+  fullTableWrap.innerHTML = `
+    <div class="promo-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="num-col">#</th>
+            <th onclick="togglePromoSort('name')">Membro ${getPromoSortIndicator('name')}</th>
+            <th>Cargo</th>
+            <th onclick="togglePromoSort('avg4w')" style="text-align:center; cursor:pointer;">Média 4 semanas ${getPromoSortIndicator('avg4w')}</th>
+            <th onclick="togglePromoSort('avg8w')" style="text-align:center; cursor:pointer;">Média 8 semanas ${getPromoSortIndicator('avg8w')}</th>
+            <th style="text-align:center;">Elegível</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${allMembers.map((p, index) => {
+            const rank = p.rank;
+            const avg4w = p.avg4w;
+            const avg8w = p.avg8w;
+            
+            let elegivel = '';
+            if (rank === 'member' && avg4w >= 2500) elegivel = 'Ancião';
+            else if (rank === 'elder' && avg8w >= 2500) elegivel = 'Colíder';
+            else elegivel = '—';
+            
+            return `
+              <tr>
+                <td class="num-col">${index + 1}</td>
+                <td>${p.member_name}</td>
+                <td><span class="promo-rank">${p.member_rank || 'membro'}</span></td>
+                <td style="text-align:center; font-family:'JetBrains Mono',monospace;">${Math.round(avg4w)}</td>
+                <td style="text-align:center; font-family:'JetBrains Mono',monospace;">${Math.round(avg8w)}</td>
+                <td style="text-align:center;">
+                  ${elegivel !== '—' ? `<span class="badge eligible">${elegivel}</span>` : '—'}
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  ref.textContent = `Referente à guerra ${refSection} · calculado em ${new Date(latestRun).toLocaleString('pt-BR')}`;
+}
+
+function render() {
+  renderAttackTable();
+  renderPromotions();
+}
+
+// ---- Inicialização ----
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("Iniciando aplicação...");
+    connect();
+});
+</script>
+</body>
+</html>
